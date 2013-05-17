@@ -1,0 +1,20 @@
+# python interpreter
+/python
+
+# Buildout's directories
+/bin
+/develop-eggs
+/eggs
+/parts
+/.installed.cfg
+/downloads
+/lib
+
+# Setuptools/Distribute's files
+*.egg-info
+/dist
+/build
+
+# Python's precompiled files
+*.pyc
+*.pyo
