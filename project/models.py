@@ -25,7 +25,3 @@ class Country(models.Model):
 
     def __unicode__(self):
         return self.description
-
-    @classmethod
-    def multiple_selection_fields(self):
-        return ['continent', 'languages', ]

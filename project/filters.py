@@ -6,38 +6,35 @@ from django.contrib.admin.util import get_model_from_relation
 from django.utils.encoding import smart_text
 
 
-class MultipleSelectionFieldListFilter(FieldListFilter):
+class MultipleSelectionFieldListFilter(RelatedFieldListFilter):
+
     def __init__(self, field, request, params, model, model_admin, field_path):
-        other_model = get_model_from_relation(field)
-        if hasattr(field, 'rel'):
-            rel_name = field.rel.get_related_field().name
-        else:
-            rel_name = other_model._meta.pk.name
-        self.lookup_kwarg = '%s__%s__in' % (field_path, rel_name)
-        self.lookup_kwarg_isnull = '%s__isnull' % field_path
-        self.lookup_val = request.GET.get(self.lookup_kwarg, None)
-        self.lookup_val_isnull = request.GET.get(self.lookup_kwarg_isnull, None)
-        self.lookup_choices = field.get_choices(include_blank=False)
         super(MultipleSelectionFieldListFilter, self).__init__(field, request, params, model, model_admin, field_path)
-        if hasattr(field, 'verbose_name'):
-            self.lookup_title = field.verbose_name
-        else:
-            self.lookup_title = other_model._meta.verbose_name
-        self.title = self.lookup_title
+        if self.use_multiple_selection(model_admin):
+            # eventually use model__field__in lookup arg to support multiple selections
+            other_model = get_model_from_relation(field)
+            if hasattr(field, 'rel'):
+                rel_name = field.rel.get_related_field().name
+            else:
+                rel_name = other_model._meta.pk.name
+            self.lookup_kwarg = '%s__%s__in' % (field_path, rel_name)
+            self.lookup_kwarg_isnull = '%s__isnull' % field_path
+            self.lookup_val = request.GET.get(self.lookup_kwarg, None)
+            self.lookup_val_isnull = request.GET.get(self.lookup_kwarg_isnull, None)
 
-    def has_output(self):
-        if (isinstance(self.field, models.related.RelatedObject)
-                and self.field.field.null or hasattr(self.field, 'rel')
-                    and self.field.null):
-            extra = 1
-        else:
-            extra = 0
-        return len(self.lookup_choices) + extra > 1
-
-    def expected_parameters(self):
-        return [self.lookup_kwarg, self.lookup_kwarg_isnull]
+    def use_multiple_selection(self, model_admin):
+        fieldname = self.field.name
+        if hasattr(model_admin, 'multiple_selection_list_filter') and fieldname in model_admin.multiple_selection_list_filter:
+            return True
+        return False
 
     def choices(self, cl):
+        if self.use_multiple_selection(cl.model_admin):
+            return self.multiple_selection_choices(cl)
+        # RelatedFieldListFilter fallback
+        return super(MultipleSelectionFieldListFilter, self).choices(cl)
+
+    def multiple_selection_choices(self, cl):
 
         from django.contrib.admin.views.main import EMPTY_CHANGELIST_VALUE
 
@@ -81,13 +78,7 @@ class MultipleSelectionFieldListFilter(FieldListFilter):
             }
 
 
-def multiple_selection_field_list_filter_test(f):
-    if hasattr(f, 'rel') and (bool(f.rel) or isinstance(f, models.related.RelatedObject)):
-        if hasattr(f.model, 'multiple_selection_fields') and f.name in f.model.multiple_selection_fields():
-            return True
-    return False
-
-MultipleSelectionFieldListFilter.register(
-    multiple_selection_field_list_filter_test,
-    MultipleSelectionFieldListFilter,
-    True)
+FieldListFilter.register(lambda f: (
+        hasattr(f, 'rel') and bool(f.rel) or
+        isinstance(f, models.related.RelatedObject)), MultipleSelectionFieldListFilter,
+        True)

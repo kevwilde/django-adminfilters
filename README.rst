@@ -8,28 +8,24 @@ How to use
 ==========
 
 - import "project/filter.py" once
-- add a classmethod multiple_selection_fields() to your Model which returns
-  the list of fields to be filtererd using multiple selection in;
-
+- add the attribute multiple_selection_list_filter to your ModelAdmin
+  to specify which filters require multiple selection
 
 Example::
 
-    class Country(models.Model):
+    class CountryAdmin(admin.ModelAdmin):
+        ...
+        list_filter = ['continent', 'languages', ]
+        multiple_selection_list_filter = ['continent', 'languages', ]
 
-        description = models.CharField(max_length=255, blank=False)
-        continent = models.ForeignKey(Continent, db_index=True)
-        languages = models.ManyToManyField(Language)
+Implementation details
+======================
 
-        def __unicode__(self):
-            return self.description
-
-        @classmethod
-        def multiple_selection_fields(self):
-            return ['continent', 'languages', ]
+A new filter MultipleSelectionFieldListFilter is registered instead of RelatedFieldListFilter,
+and provides multiple selection or fallback to single selection behaviour according to
+ModelAdmin prescriptions.
 
 Todo
 ====
 
 - move functionality into separate installable app
-- move multiple selectable field list in ModelsAdmin
-  (requires a small addition to django.contrib.admin.filters or some refactoring)
