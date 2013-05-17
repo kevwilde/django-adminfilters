@@ -1,4 +1,3 @@
-
 What it is
 ==========
 
@@ -29,3 +28,4 @@ Todo
 ====
 
 - move functionality into separate installable app
+- in the meantime, just copy "product/filters.py" somewhere and include it once
