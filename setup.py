@@ -3,18 +3,18 @@ from setuptools import setup, find_packages
 with open('README.rst', 'r') as file:
     long_desc = file.read()
 
-version = __import__('multipleselectfilter').get_version()
+version = __import__('extraadminfilters').get_version()
 
 setup(
-    name='django-multipleselectfilter',
+    name='django-extra-admin-filters',
     version=version,
-    author='Mario Orlandi',
-    author_email='morlandi@brainstorm.it',
+    author='Kevin Van Wilder',
+    author_email='kevin@van-wilder.be',
     packages=find_packages(),
     scripts=[],
-    url='https://github.com/morlandi/django-multiple-selection-filters',
+    url='https://github.com/kevwilde/django-extra-admin-filters',
     license='BSD',
-    description='Add multiple selection filters to django admin listview.',
+    description='Additional change list filters for django admin.',
     long_description=long_desc,
     include_package_data=True,
     zip_safe=False,
