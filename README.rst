@@ -6,10 +6,11 @@ django administrator.
 
 Multiple selection filters allow filtering on one or more filter values.
 The following multiple selection filters are available:
+
 - UnionFieldListFilter: filters results matching ANY of the filter
-values. Similar to the Union operation on sets.
+  values. Similar to the Union operation on sets.
 - IntersectionFieldListFilter: filters results maching ALL of the
-filter values. Similar to the Intersection operation on sets.
+  filter values. Similar to the Intersection operation on sets.
 
 How to use
 ==========
