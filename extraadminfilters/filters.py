@@ -3,67 +3,89 @@ from django.utils.translation import ugettext_lazy as _
 
 from django.db import models
 
-from django.contrib.admin.filters import RelatedFieldListFilter
+from django.contrib.admin.filters import RelatedFieldListFilter, FieldListFilter
 
 from django.utils.encoding import smart_text
 
 
-class UnionRelatedFieldListFilter(RelatedFieldListFilter):
-    """A RelatedFieldListFilter which allows multiple selection of
-    filters in filter based on the union set operation. """
+
+class MultipleSelectFieldListFilter(FieldListFilter):
 
     def __init__(self, field, request, params, model, model_admin, field_path):
-        super(MultipleSelectionFieldListFilter, self).__init__(field, request, params, model, model_admin, field_path)
-        other_model = get_model_from_relation(field)
-        if hasattr(field, 'rel'):
-            rel_name = field.rel.get_related_field().name
-        else:
-            rel_name = other_model._meta.pk.name
-        self.lookup_kwarg = '%s__%s__in' % (field_path, rel_name)
-        self.lookup_kwarg_isnull = '%s__isnull' % field_path
+        self.lookup_kwarg = '%s_intersect' % field_path
+        self.filter_statement = '%s__id' % field_path
         self.lookup_val = request.GET.get(self.lookup_kwarg, None)
-        self.lookup_val_isnull = request.GET.get(self.lookup_kwarg_isnull, None)
+        self.lookup_choices = field.get_choices(include_blank=False)
+        super(MultipleSelectFieldListFilter, self).__init__(
+            field, request, params, model, model_admin, field_path)
+
+    def expected_parameters(self):
+        return [self.lookup_kwarg]
+
+    def values(self):
+        """
+        Returns a list of values to filter on.
+        """
+        value = self.used_parameters.get(self.lookup_kwarg, None)
+        if value:
+            return value.split(',')
+        else:
+            return []
+
+    def queryset(self, request, queryset):
+        raise NotImplementedError
 
     def choices(self, cl):
         from django.contrib.admin.views.main import EMPTY_CHANGELIST_VALUE
-
         yield {
-            'selected': self.lookup_val is None and not self.lookup_val_isnull,
+            'selected': self.lookup_val is None,
             'query_string': cl.get_query_string({},
-                [self.lookup_kwarg, self.lookup_kwarg_isnull]),
-            'display': _('All'),
+                [self.lookup_kwarg]),
+            'display': _('All')
         }
         for pk_val, val in self.lookup_choices:
-            # collect selected pks from query params
-            pks = self.lookup_val.split(',') if self.lookup_val else []
-            pk = smart_text(pk_val)
-            selected = False
-            if pk in pks:
-                selected = True
-                # remove this key from selection
-                pks = [p for p in pks if p != pk]
+            selected = pk_val in self.values()
+            pk_list = set(self.values())
+            if selected:
+                pk_list.remove(pk_val)
             else:
-                # add this key to selection
-                pks.append(pk)
-            if len(pks) <= 0:
-                query_string = cl.get_query_string({}, [self.lookup_kwarg, self.lookup_kwarg_isnull])
-            else:
-                query_string = cl.get_query_string({
-                    self.lookup_kwarg: ','.join(pks),
-                    }, [self.lookup_kwarg_isnull])
+                pk_list.add(pk_val)
+            queryset_value = ','.join(pk_list)
             yield {
                 'selected': selected,
-                'query_string': query_string,
+                'query_string': cl.get_query_string({
+                    self.lookup_kwarg: queryset_value,
+                    }),
                 'display': val,
             }
-        # TODO: untested
-        if (isinstance(self.field, models.related.RelatedObject)
-                and self.field.field.null or hasattr(self.field, 'rel')
-                    and self.field.null):
-            yield {
-                'selected': bool(self.lookup_val_isnull),
-                'query_string': cl.get_query_string({
-                    self.lookup_kwarg_isnull: 'True',
-                }, [self.lookup_kwarg]),
-                'display': EMPTY_CHANGELIST_VALUE,
+
+
+class IntersectionFieldListFilter(MultipleSelectFieldListFilter):
+    """
+    A FieldListFilter which allows multiple selection of
+    filters for many-to-many type fields. A list of objects will be
+    returned whose m2m contains all the selected filters.
+    """
+
+    def queryset(self, request, queryset):
+        for value in self.values():
+            filter_dct = {
+                self.filter_statement: value
             }
+            queryset = queryset.filter(**filter_dct)
+        return queryset
+
+
+class UnionFieldListFilter(MultipleSelectFieldListFilter):
+    """
+    A FieldListFilter which allows multiple selection of
+    filters for many-to-many type fields. A list of objects will be
+    returned whose m2m contains all the selected filters.
+    """
+
+    def queryset(self, request, queryset):mousemoumousemoud
+        filter_statement = "%s__in" % self.filter_statement
+        filter_dct = {
+            filter_statement: self.values()
+        }
+        return queryset.filter(**filter_dct)

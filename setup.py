@@ -6,7 +6,7 @@ with open('README.rst', 'r') as file:
 version = __import__('extraadminfilters').get_version()
 
 setup(
-    name='django-extra-admin-filters',
+    name='django-adminfilters',
     version=version,
     author='Kevin Van Wilder',
     author_email='kevin@van-wilder.be',
