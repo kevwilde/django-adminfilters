@@ -83,9 +83,13 @@ class UnionFieldListFilter(MultipleSelectFieldListFilter):
     returned whose m2m contains all the selected filters.
     """
 
-    def queryset(self, request, queryset):mousemoumousemoud
+    def queryset(self, request, queryset):
         filter_statement = "%s__in" % self.filter_statement
+        filter_values = self.values()
         filter_dct = {
-            filter_statement: self.values()
+            filter_statement: filter_values
         }
-        return queryset.filter(**filter_dct)
+        if filter_values:
+            return queryset.filter(**filter_dct)
+        else:
+            return queryset
