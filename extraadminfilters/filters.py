@@ -1,12 +1,9 @@
 from django.contrib.admin.util import get_model_from_relation
 from django.utils.translation import ugettext_lazy as _
-
 from django.db import models
-
 from django.contrib.admin.filters import RelatedFieldListFilter, FieldListFilter
-
 from django.utils.encoding import smart_text
-
+from django.db.models.fields import IntegerField, AutoField
 
 
 class MultipleSelectFieldListFilter(FieldListFilter):
@@ -26,11 +23,14 @@ class MultipleSelectFieldListFilter(FieldListFilter):
         """
         Returns a list of values to filter on.
         """
+        values = []
         value = self.used_parameters.get(self.lookup_kwarg, None)
         if value:
-            return value.split(',')
-        else:
-            return []
+            values = value.split(',')
+        # convert to integers if IntegerField
+        if type(self.field.rel.to._meta.pk) in [IntegerField, AutoField]:
+            values = [int(x) for x in values]
+        return values
 
     def queryset(self, request, queryset):
         raise NotImplementedError
@@ -50,7 +50,7 @@ class MultipleSelectFieldListFilter(FieldListFilter):
                 pk_list.remove(pk_val)
             else:
                 pk_list.add(pk_val)
-            queryset_value = ','.join(pk_list)
+            queryset_value = ','.join([str(x) for x in pk_list])
             yield {
                 'selected': selected,
                 'query_string': cl.get_query_string({
