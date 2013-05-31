@@ -48,11 +48,15 @@ class MultipleSelectFieldListFilter(FieldListFilter):
             else:
                 pk_list.add(pk_val)
             queryset_value = ','.join([str(x) for x in pk_list])
+            if pk_list:
+                query_string = cl.get_query_string({
+                    self.lookup_kwarg: queryset_value,
+                    })
+            else:
+                query_string = cl.get_query_string({}, [self.lookup_kwarg])
             yield {
                 'selected': selected,
-                'query_string': cl.get_query_string({
-                    self.lookup_kwarg: queryset_value,
-                    }),
+                'query_string': query_string,
                 'display': val,
             }
 
