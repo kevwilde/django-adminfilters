@@ -1,15 +1,12 @@
-from django.contrib.admin.util import get_model_from_relation
 from django.utils.translation import ugettext_lazy as _
-from django.db import models
-from django.contrib.admin.filters import RelatedFieldListFilter, FieldListFilter
-from django.utils.encoding import smart_text
+from django.contrib.admin.filters import FieldListFilter
 from django.db.models.fields import IntegerField, AutoField
 
 
 class MultipleSelectFieldListFilter(FieldListFilter):
 
     def __init__(self, field, request, params, model, model_admin, field_path):
-        self.lookup_kwarg = '%s_intersect' % field_path
+        self.lookup_kwarg = '%s_filter' % field_path
         self.filter_statement = '%s__id' % field_path
         self.lookup_val = request.GET.get(self.lookup_kwarg, None)
         self.lookup_choices = field.get_choices(include_blank=False)
