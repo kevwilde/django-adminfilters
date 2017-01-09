@@ -33,7 +33,6 @@ class MultipleSelectFieldListFilter(FieldListFilter):
         raise NotImplementedError
 
     def choices(self, cl):
-        from django.contrib.admin.views.main import EMPTY_CHANGELIST_VALUE
         yield {
             'selected': self.lookup_val is None,
             'query_string': cl.get_query_string({},
